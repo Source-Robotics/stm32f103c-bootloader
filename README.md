@@ -124,6 +124,24 @@ The board replies with its current board ID (default 0; configurable via `set-id
 6. If a flash is in progress, the listen window extends to `FLASH_INPROGRESS_TO` (60 s) to tolerate slow hosts.
 7. If the application CRC is invalid (partial flash, never flashed, etc.), the bootloader stays in bootloader mode indefinitely.
 
+## Timing — how long the board stays in the bootloader
+
+| Timer | Value | When it applies |
+|---|---|---|
+| `STARTUP_TO` | **2 s** | Cold boot, before any valid command has been received |
+| `NOCANRX_TO` | **3 s** | After the first valid command, if traffic stops |
+| `FLASH_INPROGRESS_TO` | **60 s** | Once a flash sequence is in progress (WBUF or stream data seen, before `WRITE_CRC`) |
+
+Any valid `PING` command resets the timer, so the host can extend the window indefinitely by sending pings during long operations. This is the same pattern as the "tester present" message in industrial bootloaders.
+
+### How this compares to industry norms
+
+Cold-boot listen windows in industry typically range from **1–5 seconds** for hobbyist and motor-drive bootloaders, up to **5–30 seconds** for automotive/industrial ECU bootloaders (AUTOSAR, UDS, CANopen LSS). Some bootloaders use no timeout at all and instead enter bootloader mode via a hardware pin or user gesture (the STM32 ROM bootloader, Adafruit UF2, ESP-IDF). The pattern of "any valid command resets the timer" — used by this bootloader — is also how industrial UDS-style bootloaders stay alive during long flash sessions.
+
+Our 2 s cold-boot window sits on the short side of that range, which favours **fast application boot** when no host is connected — usually what you want for an embedded motor controller. The 60 s mid-flash window is generous and tolerates slow USB-CAN adapters or busy hosts without giving up partway through.
+
+If your use case needs different timing, the values are `#define`s in [`firmware/Core/Inc/main.h`](firmware/Core/Inc/main.h) and a recompile is a one-liner change.
+
 ## CAN interface
 
 - Peripheral: `CAN1`, PB8 (RX) / PB9 (TX), 1 Mbit/s, standard 11-bit IDs.

@@ -57,7 +57,42 @@ Verification happens via `STREAM_STATUS` after each chunk and `WRITE_PAGE` at th
 
 ### CAN bitrate and board ID constraints
 
-Standard 11-bit IDs only. Board IDs 0-13 use reply IDs `0x701..0x70E`. Board IDs 14 and 15 are reserved (so the application can use those CAN node IDs without colliding with bootloader traffic).
+Standard 11-bit IDs only. Board IDs 0-13 use reply IDs `0x701..0x70E`. Board IDs 14 and 15 are **reserved** — see the next section for why.
+
+### Why board IDs 14 and 15 are reserved (interaction with the host application's CAN ID scheme)
+
+This bootloader is designed to coexist with a host application that uses the **same 11-bit CAN bus** for its own traffic. The bootloader uses a few specific IDs (`0x700` for commands; `0x701..0x70E` for replies; `0x000..0x07F` shifted by `board_id << 7` for stream data) and reserves the rest for the application.
+
+The Source Robotics motor controllers (StepFOC, Spectral BLDC) encode their 11-bit CAN IDs as:
+
+```
+11-bit ID = [node_id : 4 bits] [command_id : 6 bits] [error_bit : 1 bit]
+          = (node_id << 7) | (command_id << 1) | error_bit
+```
+
+So *every* 11-bit standard CAN ID can technically be decoded by the app, including the bootloader's `0x700`:
+
+```
+0x700 = 0b111 0000 0000
+       = node_id=14, command_id=0, error_bit=0   (in app-decode terms)
+```
+
+This is why **board IDs 14 and 15 are reserved** for the bootloader:
+
+- Bootloader command frame `0x700` decodes as app-node `14`, command `0`. If the app were configured with node ID 14, it would treat every bootloader command as a (probably invalid) message addressed to itself.
+- Bootloader reply frames `0x701..0x70E` (board IDs 0-13) all decode as app-node `14` too, command `0..6`, error `0` or `1`. Again, an app on node 14 would see all bootloader replies as its own traffic.
+
+By **not** allowing the app to use node 14 (and 15, for symmetry), the bootloader's ID space is fully isolated from any app traffic — both directions.
+
+In normal operation, only one of {bootloader, app} is running at any moment (a successful flash hands off to the app via `NVIC_SystemReset`; an app-reset command does the reverse), so the IDs *would* be free to overlap. But the conservative choice of reserving node 14/15 means the host can send bootloader frames safely even if it has stale assumptions about what's running on the bus, and the app can never accidentally receive bootloader frames.
+
+The `bl_flash.py` `app-reset` command in the host tools uses this encoding to build the reset command's CAN ID:
+
+```
+reset_id = (node_id << 7) | (14 << 1) | 0    # e.g. 0x09C for node 1
+```
+
+where `14` is the host application's chosen `IN_RESET` command code in its own protocol. This is unrelated to the bootloader's node-14 reservation — the bootloader doesn't process this ID at all; the app sees and acts on it.
 
 ## UART framing
 

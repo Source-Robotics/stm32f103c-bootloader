@@ -1,0 +1,4 @@
+python-can>=4.0.0
+pyserial>=3.5
+crcmod>=1.7
+colorama>=0.4.6

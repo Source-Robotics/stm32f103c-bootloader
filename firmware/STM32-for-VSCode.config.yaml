@@ -1,0 +1,21 @@
+c_cpp_standard: c11
+configuration_name: stm32f103c_bl
+compiler_path: /usr/bin/arm-none-eabi-gcc
+# Adjust compiler_path to match your arm-none-eabi-gcc installation, e.g.:
+#   Windows: C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gcc.exe
+#   Linux:   /usr/bin/arm-none-eabi-gcc
+
+include_path:
+  - ${workspaceFolder}/Core/Inc
+  - ${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc
+  - ${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy
+  - ${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F1xx/Include
+  - ${workspaceFolder}/Drivers/CMSIS/Include
+
+defines:
+  - USE_HAL_DRIVER
+  - STM32F103xB
+
+make_args: -j4
+openocd_interface: interface/stlink.cfg
+openocd_target: target/stm32f1x.cfg

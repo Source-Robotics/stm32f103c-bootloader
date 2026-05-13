@@ -1,0 +1,32 @@
+# Build artifacts
+firmware/build/
+*.o
+*.d
+*.lst
+*.map
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Soak / test logs
+host_tools/*.log
+scripts/*.log
+
+# OpenOCD log
+openocd.log
+
+# Local PlatformIO build cache (in case anyone keeps a PlatformIO project here)
+.pio/

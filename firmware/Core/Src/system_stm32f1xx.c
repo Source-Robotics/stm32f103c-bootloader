@@ -173,13 +173,27 @@ const uint8_t APBPrescTable[8U] =  {0, 0, 0, 0, 1, 2, 3, 4};
   * @param  None
   * @retval None
   */
+/* Forward declaration of the bootloader's fast-path entry point.
+ * Defined in Core/Src/bootloader.c. If the SRAM magic value is present at
+ * 0x20001000 AND the last reset was a software reset, PreSystemInit jumps
+ * directly to the application (never returns). Otherwise it returns and
+ * normal SystemInit / boot continues.
+ *
+ * Calling it from SystemInit (rather than from Reset_Handler in the startup
+ * file) keeps our bootloader compatible with any standard CMSIS startup —
+ * the only requirement is that the startup file calls SystemInit before
+ * .data/.bss init, which is the standard ARM CMSIS convention. */
+extern void PreSystemInit(void);
+
 void SystemInit (void)
 {
+  PreSystemInit();
+
 #if defined(STM32F100xE) || defined(STM32F101xE) || defined(STM32F101xG) || defined(STM32F103xE) || defined(STM32F103xG)
   #ifdef DATA_IN_ExtSRAM
-    SystemInit_ExtMemCtl(); 
+    SystemInit_ExtMemCtl();
   #endif /* DATA_IN_ExtSRAM */
-#endif 
+#endif
 
   /* Configure the Vector Table location -------------------------------------*/
 #if defined(USER_VECT_TAB_ADDRESS)

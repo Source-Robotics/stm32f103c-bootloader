@@ -4,6 +4,39 @@ A small, reliable field-update bootloader for the **STM32F103CBT6** (128 KB flas
 
 Designed to live in the first 12 KB of flash and load a regular application from `0x08003000` upward. The application keeps the rest of the chip (116 KB) and can update itself over CAN or UART without a JTAG probe.
 
+## Boards using this bootloader
+
+- [**StepFOC stepper controller**](https://source-robotics.com/products/stepfoc-stepper-controller) — Source Robotics
+- [**Spectral Micro BLDC controller**](https://source-robotics.com/products/spectral-micro-bldc-controller) — Source Robotics
+
+If you're shipping a product with this bootloader, open a PR adding it here.
+
+## Installing the bootloader (no compilation needed)
+
+The latest pre-built bootloader binaries are committed in [`bin/`](bin/). Flash one of these via ST-Link, J-Link, OpenOCD, or STM32CubeProgrammer at address `0x08000000` and you're done — see [`bin/README.md`](bin/README.md) for one-command recipes.
+
+## Building from source
+
+Two build systems are provided, both producing equivalent output:
+
+### Option A — PlatformIO (one command, recommended for newcomers)
+
+```powershell
+pio run -t upload
+```
+
+That's it. Builds via `framework = cmsis` and flashes via ST-Link. Config is in [`platformio.ini`](platformio.ini). Works from VSCode + PlatformIO IDE too.
+
+### Option B — Make (recommended for developers without PlatformIO)
+
+```powershell
+cd firmware
+make -j4
+# Output: build/stm32f103c_bl.bin
+```
+
+Requires `arm-none-eabi-gcc`. See [`firmware/README.md`](firmware/README.md) for flash-via-OpenOCD recipes.
+
 ## Features
 
 - Streaming flash protocol over CAN and UART — robust against transport hiccups, with end-of-page CRC verification.
@@ -45,17 +78,9 @@ scripts/              Batch scripts for stress / soak testing.
 
 ## Quick start
 
-### 1. Build and JTAG-flash the bootloader
+### 1. Install the bootloader
 
-Requires `arm-none-eabi-gcc` and an ST-Link.
-
-```powershell
-cd firmware
-make -j4
-# Produces build/stm32f103c_bl.bin
-```
-
-Flash `build/stm32f103c_bl.bin` to `0x08000000` via ST-Link Utility, STM32CubeProgrammer, or OpenOCD. See [firmware/README.md](firmware/README.md) for the OpenOCD one-liner.
+Either flash a pre-built binary from [`bin/`](bin/) (no compilation needed), or build from source — see "Installing the bootloader" and "Building from source" sections above.
 
 ### 2. Build your application linked at `0x08003000`
 

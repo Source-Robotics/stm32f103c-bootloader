@@ -89,8 +89,10 @@ LoopFillZerobss:
   cmp r2, r3
   bcc FillZerobss
 
-/* Bootloader support - Run PreSystemInit to check for magic value and jump to app */
-    bl PreSystemInit
+/* Bootloader fast-path is invoked from SystemInit (see Core/Src/system_stm32f1xx.c).
+ * Keeping it there instead of here makes this startup file binary-equivalent to
+ * the stock STMicroelectronics CMSIS startup, so PlatformIO's stm32cube/cmsis
+ * framework startup file works interchangeably with this one. */
 /* Call the clock system intitialization function.*/
     bl  SystemInit
 /* Call static constructors */

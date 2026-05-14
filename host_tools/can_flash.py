@@ -209,8 +209,10 @@ def _send_wbuf_block(bus, board_id, block_items, wbuf_gap_sec, wbuf_ack_stride):
     )
 
 
-def _send_stream_chunk(bus, board_id, chunk_items, end_seq):
+def _send_stream_chunk(bus, board_id, chunk_items, end_seq, noise_callback=None):
     for attempt in range(STREAM_CHUNK_RETRIES):
+        if noise_callback is not None:
+            noise_callback(bus)
         for seq, payload in chunk_items:
             bus.send(canmsg(stream_data_can_id(board_id, seq), payload), 1.0)
 
@@ -229,7 +231,15 @@ def _send_stream_chunk(bus, board_id, chunk_items, end_seq):
             flush_rx(bus, timeout_sec=0.001)
 
 
-def _flash_page_stream(bus, board_id, page, pcrc, page_bytes, stream_chunk_frames):
+def _flash_page_stream(
+    bus,
+    board_id,
+    page,
+    pcrc,
+    page_bytes,
+    stream_chunk_frames,
+    noise_callback=None,
+):
     flush_rx(bus, timeout_sec=0.001)
     bl_cmd_response(
         bus, board_id, BL_STREAM_BEGIN, page, [0] * 4,
@@ -246,26 +256,30 @@ def _flash_page_stream(bus, board_id, page, pcrc, page_bytes, stream_chunk_frame
             print(".", end="", flush=True)
         chunk_items = frame_items[chunk_start:chunk_start + stream_chunk_frames]
         end_seq = chunk_items[-1][0]
-        _send_stream_chunk(bus, board_id, chunk_items, end_seq)
+        _send_stream_chunk(bus, board_id, chunk_items, end_seq, noise_callback)
 
     bl_cmd_response(bus, board_id, BL_WPAGE, page, pcrc.digest(), timeout_sec=1.0)
 
 
 def _flash_page(bus, board_id, page, pcrc, page_data,
                 wbuf_gap_sec, page_drain_gap_sec, page_gap_sec,
-                wbuf_ack_stride):
+                wbuf_ack_stride, noise_callback=None):
     flush_rx(bus, timeout_sec=0.001)
     page_items = list(page_data.items())
     if wbuf_ack_stride:
         for block_start in range(0, len(page_items), wbuf_ack_stride):
             if block_start % 16 == 0:
                 print(".", end="", flush=True)
+            if noise_callback is not None:
+                noise_callback(bus)
             block_items = page_items[block_start:block_start + wbuf_ack_stride]
             _send_wbuf_block(bus, board_id, block_items, wbuf_gap_sec, wbuf_ack_stride)
     else:
         for word_offset, word_bytes in page_items:
             if word_offset % 16 == 0:
                 print(".", end="", flush=True)
+            if noise_callback is not None:
+                noise_callback(bus)
             bl_cmd(bus, board_id, BL_WBUF, word_offset, word_bytes)
             if wbuf_gap_sec > 0:
                 time.sleep(wbuf_gap_sec)
@@ -284,7 +298,8 @@ def flash(board_id, filepath, channel=None, interactive=True, app_node=None,
           erase_first=False,
           stream_enabled=DEFAULT_STREAM_ENABLED,
           stream_chunk_frames=DEFAULT_STREAM_CHUNK_FRAMES,
-          can_interface="auto"):
+          can_interface="auto",
+          noise_callback=None):
     start_time = time.perf_counter()
 
     if wbuf_gap_sec is None:
@@ -373,12 +388,12 @@ def flash(board_id, filepath, channel=None, interactive=True, app_node=None,
                     if stream_enabled and not stream_failed:
                         _flash_page_stream(
                             bus, board_id, page, page_crc, page_bytes,
-                            stream_chunk_frames,
+                            stream_chunk_frames, noise_callback,
                         )
                     else:
                         _flash_page(bus, board_id, page, page_crc, page_data,
                                     retry_wbuf_gap_sec, page_drain_gap_sec, page_gap_sec,
-                                    retry_wbuf_ack_stride)
+                                    retry_wbuf_ack_stride, noise_callback)
                         learned_wbuf_ack_stride = retry_wbuf_ack_stride
                     print(" CRC OK")
                     break

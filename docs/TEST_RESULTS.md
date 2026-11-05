@@ -15,7 +15,7 @@ host tools.
 | CAN bitrate | 1 Mbit/s |
 | Bootloader transport | CAN |
 | Bootloader app start | `0x08003000` |
-| Test firmware | `C:\Users\Petar\Desktop\BLDC.bin` |
+| Test firmware | `BLDC.bin` |
 | Firmware size | `90936` bytes |
 | Firmware padded size | `91136` bytes / `89` flash pages |
 | Initial stack pointer | `0x20005000` |
@@ -24,14 +24,14 @@ host tools.
 Firmware validation command:
 
 ```powershell
-cd C:\Users\Petar\Desktop\stm32f103c-bootloader\host_tools
-py .\validate_app_bin.py C:\Users\Petar\Desktop\BLDC.bin
+cd stm32f103c-bootloader\host_tools
+py .\validate_app_bin.py BLDC.bin
 ```
 
 Observed result:
 
 ```text
-Firmware: C:\Users\Petar\Desktop\BLDC.bin
+Firmware: BLDC.bin
 Size:     90936 bytes
 Padded:   91136 bytes (89 page(s))
 SP:       0x20005000
@@ -44,7 +44,7 @@ Result:   PASS
 Command:
 
 ```powershell
-py .\soak_fleet_update.py C:\Users\Petar\Desktop\BLDC.bin `
+py .\soak_fleet_update.py BLDC.bin `
   --can-interface slcan --channel COM6 `
   --nodes 0 --iterations 20
 ```
@@ -72,7 +72,7 @@ What this validates:
 Command pattern:
 
 ```powershell
-py .\bus_noise_update.py C:\Users\Petar\Desktop\BLDC.bin `
+py .\bus_noise_update.py BLDC.bin `
   --can-interface slcan --channel COM6 `
   --target 0 --noise-nodes <other-running-app-nodes>
 ```

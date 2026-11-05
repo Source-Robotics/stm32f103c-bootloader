@@ -78,7 +78,7 @@ Example:
 ```powershell
 cd host_tools
 python can_fleet_update.py --can-interface slcan --channel COM6 `
-                           --firmware C:\Users\Petar\Desktop\BLDC.bin
+                           --firmware path\to\BLDC.bin
 ```
 
 By default it imports the Spectral Python API from:
@@ -92,7 +92,7 @@ If your copy is somewhere else:
 ```powershell
 python can_fleet_update.py --can-interface slcan --channel COM6 `
   --spectral-api "C:\path\to\Spectral-BLDC-Python-main" `
-  --firmware C:\Users\Petar\Desktop\BLDC.bin
+  --firmware path\to\BLDC.bin
 ```
 
 The selected app node ID is also used as the bootloader board ID. This matches
@@ -112,7 +112,7 @@ a normal `0x08000000` image through the bootloader. It checks:
 Example:
 
 ```powershell
-python validate_app_bin.py C:\Users\Petar\Desktop\BLDC.bin
+python validate_app_bin.py path\to\BLDC.bin
 ```
 
 `can_fleet_update.py`, `soak_fleet_update.py`, and `bus_noise_update.py` run this
@@ -124,7 +124,7 @@ same check before flashing.
 app responds to CAN ping after every update:
 
 ```powershell
-python soak_fleet_update.py C:\Users\Petar\Desktop\BLDC.bin `
+python soak_fleet_update.py path\to\BLDC.bin `
   --can-interface slcan --channel COM6 `
   --nodes 0,1 --iterations 20
 ```
@@ -135,7 +135,7 @@ that the bootloader flasher ignores unrelated app traffic while waiting for
 bootloader ACKs:
 
 ```powershell
-python bus_noise_update.py C:\Users\Petar\Desktop\BLDC.bin `
+python bus_noise_update.py path\to\BLDC.bin `
   --can-interface slcan --channel COM6 `
   --target 0 --noise-nodes 1,2,3
 ```
